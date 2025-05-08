@@ -1,0 +1,60 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Django-related
+*.log
+*.pot
+*.pyc
+db.sqlite3
+*.sqlite3
+media/
+staticfiles/
+
+# Environment files
+.env
+.env.*
+
+# Python virtual environments
+venv/
+env/
+.venv/
+ENV/
+
+# VSCode and IDE configs
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Build and distribution
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+
+# Packaging cache
+pip-wheel-metadata/
+__pypackages__/
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Test/coverage output
+.coverage
+htmlcov/
+.tox/
+.nox/
+.cache/
+.pytest_cache/
+
+# Local settings
+local_settings.py
+
+# wheelhouse
+wheelhouse/
