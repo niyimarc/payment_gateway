@@ -17,6 +17,14 @@ A pluggable Django package for integrating multiple payment gateways (starting w
 
 ---
 
+## Example Project
+
+A sample Django project demonstrating how to use this package is available here:
+
+👉 [django_pg_test_project](https://github.com/niyimarc/payment_gateway_test)
+
+---
+
 ## 📦 Installation
 
 ```bash
