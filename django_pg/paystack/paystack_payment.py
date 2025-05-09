@@ -4,6 +4,19 @@ from django.conf import settings
 from .utils import get_model
 
 def verify_paystack_payment(order_id, reference, user):
+    # Validate user authentication
+    if not user.is_authenticated:
+        return {
+            "success": False,
+            "message": "User must be authenticated to verify payment."
+        }
+
+    # Validate user email
+    if not user.email:
+        return {
+            "success": False,
+            "message": "User must have a valid email address for payment verification."
+        }
     # Get configured Order and Cart models
     Order = get_model('PAYMENT_ORDER_MODEL')
 

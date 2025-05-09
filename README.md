@@ -90,6 +90,8 @@ def payment_verification(request, order_id, payment_method):
         return redirect('store:shop')
 ```
 
+**Note: Users attempting to make a payment via Paystack must have a valid email address. The Paystack gateway requires this for transaction initiation. Make sure you enforce email submission when a user register**
+
 5. **Add JS to html template**
 
 ✅ **Sample JS for Paystack**
