@@ -2,13 +2,14 @@ from django.db import models
 
 PAYMENT_METHOD_CHOICES = [
         ('paystack', 'Paystack'),
+        ('flutterwave', 'Flutterwave'),
     ]
 
 class BaseOrder(models.Model):
     payment_made = models.BooleanField(default=False)
     order_placed = models.BooleanField(default=False)
     status = models.CharField(max_length=50, default="Pending")
-    order_reference = models.CharField(max_length=10,)
+    order_reference = models.CharField(max_length=20,)
     payment_method = models.CharField(
         max_length=50, 
         choices=PAYMENT_METHOD_CHOICES,

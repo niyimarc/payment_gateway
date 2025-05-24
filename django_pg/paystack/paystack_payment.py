@@ -1,9 +1,9 @@
 import requests
 from django.utils import timezone
 from django.conf import settings
-from .utils import get_model
+from ..utils import get_model
 
-def verify_paystack_payment(order_id, reference, user):
+def verify_paystack_payment(order_id, transaction_id, user):
     # Validate user authentication
     if not user.is_authenticated:
         return {
@@ -21,7 +21,7 @@ def verify_paystack_payment(order_id, reference, user):
     Order = get_model('PAYMENT_ORDER_MODEL')
 
     # Verify the payment with Paystack
-    url = f"https://api.paystack.co/transaction/verify/{reference}"
+    url = f"https://api.paystack.co/transaction/verify/{transaction_id}"
     headers = {"Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}"}
     result = requests.get(url, headers=headers).json()
 

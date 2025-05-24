@@ -6,13 +6,13 @@ from django.apps import apps
 from django.conf import settings
 
 def generate_unique_order_reference():
-    code_length = 10
-    code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=code_length))
+    code_length = 20
+    code = ''.join(random.choices(string.ascii_letters + string.digits, k=code_length))
 
     Order = apps.get_model(settings.PAYMENT_ORDER_MODEL)
 
     while Order.objects.filter(order_reference=code).exists():
-        code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=code_length))
+        code = ''.join(random.choices(string.ascii_letters + string.digits, k=code_length))
 
     return code
 
