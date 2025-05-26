@@ -5,13 +5,22 @@ PAYMENT_METHOD_CHOICES = [
         ('flutterwave', 'Flutterwave'),
     ]
 
+ORDER_STATUS = [
+        ('Pending', 'Pending'),
+        ('Order Placed', 'Order Placed'),
+        ('Packed', 'Packed'),
+        ('In Transit', 'In Transit'),
+        ('Delivered', 'Delivered'),
+        ('Completed', 'Completed'),
+    ]
+
 class BaseOrder(models.Model):
     payment_made = models.BooleanField(default=False)
     order_placed = models.BooleanField(default=False)
-    status = models.CharField(max_length=50, default="Pending")
+    status = models.CharField(max_length=12, default="Pending", choices=ORDER_STATUS,)
     order_reference = models.CharField(max_length=20,)
     payment_method = models.CharField(
-        max_length=50, 
+        max_length=11, 
         choices=PAYMENT_METHOD_CHOICES,
         blank=True, 
         null=True,

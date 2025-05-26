@@ -11,6 +11,7 @@ A pluggable Django package for integrating multiple payment gateways (starting w
 - 📦 Dispatcher pattern for gateway switching
 - 🧱 Abstract `Order` model for customization
 - 📮 Admin notification hook support
+- ✅ Built-in Payment Verification View
 - 🧠 Smart unique order reference generation
 - 🧪 Built-in signal handling for order reference
 - 💡 Fully customizable frontend and views
@@ -58,14 +59,53 @@ PAYSTACK_PUBLIC_KEY = 'your-paystack-public-key'
 PAYSTACK_SECRET_KEY = 'your-paystack-secret-key'
 
 # Flutterwave keys
-FLUTTERWAVE_PUBLIC_KEY = "your-public-key"
-FLUTTERWAVE_SECRET_KEY = "your-secret-key"
+FLUTTERWAVE_PUBLIC_KEY = "your-flutterwave-public-key"
+FLUTTERWAVE_SECRET_KEY = "your-flutterwave-secret-key"
 
 ```
 
-3. **Extend the BaseOrder abstract model**
-In your own app, create your order model by extending gateways.models.BaseOrder:
+3. **Built-in Payment Verification View**
+django-pg provides a built-in payment_verification view that handles verifying transactions for all the payment gateways out of the box.
+#### 🔌 URL Configuration
+You can use the built-in view directly in your urls.py:
+```bash
+from django.urls import path
+from django_pg.views import payment_verification  # Import from the package
 
+urlpatterns = [
+    path("verify/<int:order_id>/<str:payment_method>/", payment_verification, name="payment_verification"),
+]
+```
+
+#### 🌐 Redirect Behavior
+After verifying a transaction, the view will redirect the user based on settings defined in your settings.py.
+
+Option 1: Use static URL paths
+```bash
+# settings.py
+DJANGO_PG_SUCCESS_REDIRECT = 'yourapp:track_order'
+DJANGO_PG_FAILURE_REDIRECT = 'yourapp:create_order'
+```
+Option 2: Use custom Python functions (advanced)
+You can also pass a function that takes the verification result dictionary and returns a HttpResponseRedirect.
+```bash
+# settings.py
+DJANGO_PG_SUCCESS_REDIRECT = 'yourapp.utils.payment_success_redirect'
+DJANGO_PG_FAILURE_REDIRECT = 'yourapp.utils.payment_failure_redirect'
+```
+
+If you go with option 2, you will need to add the functions in yourapp/utils.py:
+```bash
+from django.shortcuts import redirect
+
+def payment_success_redirect(result):
+    return redirect('yourapp:track_order', order_reference=result["order_reference"])
+
+def payment_failure_redirect(result):
+    return redirect('yourapp:create_order')
+```
+4. **Extend the BaseOrder abstract model**
+In your own app, create your order model by extending gateways.models.BaseOrder:
 ```bash
 # yourapp/models.py
 from django.db import models
@@ -76,32 +116,6 @@ class Order(BaseOrder):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
     # Add your fields here
-```
-
-4. 🔍 **Verifying Payments in Your View**
-In your views.py, use the dispatcher like this:
-```bash
-from django_pg.payment import verify_payment
-
-@login_required
-def payment_verification(request, order_id, payment_method):
-    if payment_method == "paystack":
-        transaction_id = request.GET.get('reference')
-    if payment_method == "flutterwave":
-        transaction_id = request.GET.get('transaction_id')
-    else:
-        messages.error(request, "Unsupported payment method")
-        return redirect('store:create_order')
-    
-    result = verify_payment(order_id, transaction_id, request.user, payment_method)
-
-    if result.get("success"):
-        # redirect to track order for example if payment is successful
-        return redirect('store:track_order', order_reference=result["order_reference"])
-    else:
-        print("Payment verification failed")
-        messages.error(request, result.get("message", "Payment verification failed"))
-        return redirect('store:create_order')
 ```
 
 **Note: Users attempting to make a payment via Paystack and Flutterwave must have a valid email address. The Paystack and Flutterwave gateway requires this for transaction initiation. Make sure you enforce email submission when a user register**
@@ -123,7 +137,7 @@ If you're using multiple payment methods (e.g. Paystack and Flutterwave), make s
             currency: "NGN",
             ref: '' + Math.floor((Math.random() * 1000000000) + 1),
             callback: function(response) {
-                window.location.href = "{% url 'store:payment_verification' order.id payment_method %}?reference=" + response.reference;
+                window.location.href = "{% url 'yourapp:payment_verification' order.id payment_method %}?reference=" + response.reference;
             },
             onClose: function() {
                 alert('Payment was not completed.');
@@ -151,7 +165,7 @@ If you're using multiple payment methods (e.g. Paystack and Flutterwave), make s
       amount: {{order.total_price}},
       currency: "NGN",
       payment_options: "card, ussd, banktransfer",
-      redirect_url: "{% url 'store:payment_verification' order.id payment_method %}",
+      redirect_url: "{% url 'yourapp:payment_verification' order.id payment_method %}",
       customer: {
         email: "{{ request.user.email }}",
         name: "{{ request.user.get_full_name|default:request.user.username }}"
