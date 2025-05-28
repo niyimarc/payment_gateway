@@ -3,6 +3,7 @@ from django.db import models
 PAYMENT_METHOD_CHOICES = [
         ('paystack', 'Paystack'),
         ('flutterwave', 'Flutterwave'),
+        ('interswitch', 'Interswitch')
     ]
 
 ORDER_STATUS = [

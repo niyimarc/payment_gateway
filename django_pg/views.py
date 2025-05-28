@@ -13,6 +13,8 @@ def payment_verification(request, order_id, payment_method):
         transaction_id = request.GET.get('reference')
     elif payment_method == "flutterwave":
         transaction_id = request.GET.get('transaction_id')
+    elif payment_method == "interswitch":
+        transaction_id = request.GET.get('reference')
     else:
         messages.error(request, "Unsupported payment method")
         return redirect(resolve_redirect(FAILURE_REDIRECT))

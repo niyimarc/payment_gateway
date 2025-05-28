@@ -10,6 +10,33 @@ def get_model(setting_name):
     app_label, model_name = model_path.split('.')
     return apps.get_model(app_label, model_name)
 
+def validate_user_for_payment(user):
+    if not user.is_authenticated:
+        return {
+            "success": False,
+            "message": "User must be authenticated to verify payment."
+        }
+
+    if not user.email:
+        return {
+            "success": False,
+            "message": "User must have a valid email address for payment verification."
+        }
+
+    return {"success": True}
+
+def validate_payment_amount(order, paid_amount, expected_amount=None):
+    expected = float(expected_amount) if expected_amount is not None else float(order.total_price)
+
+    if paid_amount < expected:
+        return {
+            "success": False,
+            "message": f"Payment too low: Expected {expected}, but got {paid_amount}"
+        }
+
+    return {"success": True}
+
+
 def resolve_redirect(value, result=None):
     """
     Resolves a redirect value. Supports:

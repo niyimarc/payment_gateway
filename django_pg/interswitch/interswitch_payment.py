@@ -3,7 +3,7 @@ from django.utils import timezone
 from django.conf import settings
 from ..utils import get_model, validate_user_for_payment, validate_payment_amount
 
-def verify_flutterwave_payment(order_id, transaction_id, user):
+def verify_interswitch_payment(order_id, transaction_id, user):
     validation = validate_user_for_payment(user)
     if not validation["success"]:
         return validation
@@ -19,29 +19,32 @@ def verify_flutterwave_payment(order_id, transaction_id, user):
             "message": "Order not found."
         }
 
-    url = f"https://api.flutterwave.com/v3/transactions/{transaction_id}/verify"
+    amount = int(float(order.total_price) * 100)
+
+    base_url = "https://qa.interswitchng.com/collections/api/v1/gettransaction.json"
+    url = f"{base_url}?merchantcode={settings.INTERSWITCH_MERCHANT_CODE}&transactionreference={transaction_id}&amount={amount}"
     print(url)
     headers = {
-        "accept": "application/json",
-        "Authorization": f"Bearer {settings.FLUTTERWAVE_SECRET_KEY}",
         "Content-Type": "application/json"
     }
 
     try:
         response = requests.get(url, headers=headers)
         result = response.json()
-        # If Flutterwave confirms a successful transaction
-        if result.get("status") == "success" and result["data"]["status"] == "successful":
-            paid_amount = int(result["data"]["amount"])
+
+        # If Interswitch confirms a successful transaction
+        if result.get("ResponseCode") == "00":
+            paid_amount_kobo = int(result["Amount"])  # in kobo
+            paid_amount = paid_amount_kobo / 100  # convert to Naira
             amount_validation = validate_payment_amount(order, paid_amount)
 
             if not amount_validation["success"]:
                 return amount_validation
-            print("Passed payment validation")
+            
             order.payment_made = True
             order.order_placed = True
             order.status = "Order Placed"
-            order.payment_method = 'flutterwave'
+            order.payment_method = 'interswitch'
             order.payment_date = timezone.now()
             order.save()
 

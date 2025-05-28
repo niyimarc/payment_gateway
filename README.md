@@ -9,8 +9,7 @@ A pluggable Django package for integrating multiple payment gateways (starting w
 - 🔌 Plug-and-play integration
 - 🔐 Paystack support (more gateways coming)
 - 📦 Dispatcher pattern for gateway switching
-- 🧱 Abstract `Order` model for customization
-- 📮 Admin notification hook support
+- 🧱 Abstract `BaseOrder` model for customization
 - ✅ Built-in Payment Verification View
 - 🧠 Smart unique order reference generation
 - 🧪 Built-in signal handling for order reference
@@ -62,6 +61,10 @@ PAYSTACK_SECRET_KEY = 'your-paystack-secret-key'
 FLUTTERWAVE_PUBLIC_KEY = "your-flutterwave-public-key"
 FLUTTERWAVE_SECRET_KEY = "your-flutterwave-secret-key"
 
+# Interswitch keys
+INTERSWITCH_MERCHANT_CODE = "your-interswitch-merchant-code"
+INTERSWITCH_PAY_ITEM_ID = "your-interswitch-pay-item-id"
+
 ```
 
 3. **Built-in Payment Verification View**
@@ -80,7 +83,7 @@ urlpatterns = [
 #### 🌐 Redirect Behavior
 After verifying a transaction, the view will redirect the user based on settings defined in your settings.py.
 
-Option 1: Use static URL paths
+Option 1: Use named URL patterns
 ```bash
 # settings.py
 DJANGO_PG_SUCCESS_REDIRECT = 'yourapp:track_order'
@@ -122,9 +125,10 @@ class Order(BaseOrder):
 
 ### 5. Add JS to Your HTML Template
 
-If you're using multiple payment methods (e.g. Paystack and Flutterwave), make sure your template checks for the selected `payment_method`. If you're only using one method, you can pass the preferred payment method in a hidden field when the order is created.
+If you're using multiple payment methods (e.g. Paystack, Flutterwave and Interswitch), make sure your template checks for the selected `payment_method`. If you're only using one payment method, you can pass the preferred payment method in a hidden field when the order is created.
 
 #### ✅ Paystack Integration (HTML Template)
+[Check Paystack Documentation](https://paystack.com/docs/payments/accept-payments/)
 ```bash
 {% if payment_method == 'paystack' %}
 <script src="https://js.paystack.co/v2/inline.js"></script>
@@ -154,6 +158,7 @@ If you're using multiple payment methods (e.g. Paystack and Flutterwave), make s
 ```
 
 #### ✅ Flutterwave Integration (HTML Template)
+[Check Flutterwave Documentation](https://developer.flutterwave.com/docs/inline)
 ```bash
 {% if payment_method == 'flutterwave' %}
 <script src="https://checkout.flutterwave.com/v3.js"></script>
@@ -179,7 +184,45 @@ If you're using multiple payment methods (e.g. Paystack and Flutterwave), make s
 </script>
 {% endif %}
 ```
+#### ✅ Interswitch Integration (HTML Template)
+[Check Interswitch Documentation](https://docs.interswitchgroup.com/docs/web-checkout)
+```bash
+{% if payment_method == 'interswitch' %}
+<script src="https://newwebpay.qa.interswitchng.com/inline-checkout.js"></script>
+<script>
+(function() {
+    const redirectUrl = "{% url 'yourapp:payment_verification' order.id payment_method %}?reference={{ order.order_reference }}";
+    const paymentAmount = {{ order.total_price|floatformat:0 }} * 100;
 
+    function paymentCallback(response) {
+        console.log("Interswitch Payment Response:", response);
+
+        if (response?.resp === '00') {
+            // Successful payment
+            window.location.href = redirectUrl;
+        } else {
+            alert("Payment was not successful. Please try again.");
+        }
+    }
+
+    const paymentRequest = {
+        merchant_code: "{{ INTERSWITCH_MERCHANT_CODE }}",
+        pay_item_id: "{{ INTERSWITCH_PAY_ITEM_ID }}",
+        txn_ref: "{{ order.order_reference }}",
+        site_redirect_url: redirectUrl,
+        amount: paymentAmount,
+        currency: 566,
+        cust_email: "{{ request.user.email }}",
+        cust_name: "{{ request.user.get_full_name|default:request.user.username }}",
+        onComplete: paymentCallback,
+        mode: "TEST"
+    };
+
+    window.webpayCheckout(paymentRequest);
+})();
+</script>
+{% endif %}
+```
 ## 🔁 Signals (Auto Order Reference)
 
 You don’t need to register anything. The gateways app automatically registers a pre_save signal that generates a unique order_reference.
