@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.1] - 2025-08-19
+### Added
+- Introduced a new JSON-based payment verification view.
+  - Useful for projects where the frontend and backend are separated.
+  - Returns JSON responses (`success`, `message`, `data`) instead of performing redirects.
+  - Enables frontend apps (SPA, mobile, etc.) to handle post-payment flow directly.
+---
+
 ## [0.4.0] - 2025-05-28
 ### Added
 - Integrated Interswitch payment gateway support.

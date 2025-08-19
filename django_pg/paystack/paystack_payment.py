@@ -22,7 +22,18 @@ def verify_paystack_payment(order_id, transaction_id, user):
     # Verify the payment with Paystack
     url = f"https://api.paystack.co/transaction/verify/{transaction_id}"
     headers = {"Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}"}
-    result = requests.get(url, headers=headers).json()
+
+    try:
+        response = requests.get(url, headers=headers)
+        result = response.json()
+    except Exception as e:
+        # print(f"[Paystack] Exception verifying transaction {transaction_id}: {e}")
+        return {
+            "success": False,
+            "message": "Error verifying payment"
+        }
+
+    # print(f"[Paystack] Verification result for tx {transaction_id}: {result}")
 
     # If Paystack confirms a successful transaction
     if result.get("status") and result["data"]["status"] == "success":
@@ -45,6 +56,8 @@ def verify_paystack_payment(order_id, transaction_id, user):
             "order_reference": order.order_reference
         }
 
+    # If verification failed
+    # print(f"[Paystack] Payment verification failed for tx {transaction_id}")
     # If verification failed
     return {
         "success": False,
