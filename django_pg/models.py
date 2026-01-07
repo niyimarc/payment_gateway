@@ -3,7 +3,8 @@ from django.db import models
 PAYMENT_METHOD_CHOICES = [
         ('paystack', 'Paystack'),
         ('flutterwave', 'Flutterwave'),
-        ('interswitch', 'Interswitch')
+        ('interswitch', 'Interswitch'),
+        ('stripe', 'Stripe'),
     ]
 
 ORDER_STATUS = [
@@ -26,6 +27,7 @@ class BaseOrder(models.Model):
         blank=True, 
         null=True,
         help_text="The payment gateway used for this order.")
+    stripe_checkout_session_id = models.CharField(max_length=120, blank=True, null=True)
     payment_date = models.DateTimeField(null=True, blank=True)
 
     class Meta:

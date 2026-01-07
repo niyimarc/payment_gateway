@@ -1,11 +1,15 @@
 from django.conf import settings
 from django.shortcuts import redirect
 from django.contrib import messages
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
-from .utils import resolve_redirect
-from django.http import JsonResponse
+from django.utils.decorators import method_decorator
+from django.http import JsonResponse, HttpResponse
 from django.views import View
 import json
+from .utils import resolve_redirect
+from .stripe.webhook import stripe_webhook_response
+from .exceptions import PaymentConfigurationError, PaymentRuntimeError
 
 SUCCESS_REDIRECT = getattr(settings, 'DJANGO_PG_SUCCESS_REDIRECT', None)
 FAILURE_REDIRECT = getattr(settings, 'DJANGO_PG_FAILURE_REDIRECT', None)
@@ -18,6 +22,8 @@ def payment_verification(request, order_id, payment_method):
         transaction_id = request.GET.get('transaction_id')
     elif payment_method == "interswitch":
         transaction_id = request.GET.get('reference')
+    elif payment_method == "stripe":
+        transaction_id = request.GET.get('reference') or request.GET.get('session_id')
     else:
         messages.error(request, "Unsupported payment method")
         return redirect(resolve_redirect(FAILURE_REDIRECT))
@@ -44,6 +50,8 @@ class PaymentVerificationJSONView(View):
             transaction_id = body.get("reference") or body.get("transaction_id")
         elif payment_method == "interswitch":
             transaction_id = body.get("reference")
+        elif payment_method == "stripe":
+            transaction_id = body.get('reference') or body.get('session_id')
         else:
             return JsonResponse(
                 {"success": False, "message": "Unsupported payment method"},
@@ -62,3 +70,18 @@ class PaymentVerificationJSONView(View):
                 {"success": False, "message": result.get("message", "Payment verification failed")},
                 status=400
             )
+        
+@method_decorator(csrf_exempt, name="dispatch")
+class StripeWebhookView(View):
+    def post(self, request, *args, **kwargs):
+        try:
+            return stripe_webhook_response(request)
+        except PaymentConfigurationError as e:
+            # misconfigured server
+            return HttpResponse(str(e), status=500)
+        except PaymentRuntimeError:
+            # bad payload/signature etc.
+            return HttpResponse(status=400)
+        except Exception:
+            # don't leak details
+            return HttpResponse(status=500)

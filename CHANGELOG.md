@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),  
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [0.5.0] – 2026-01-06
+
+### Added
+- Stripe payment gateway support
+- Stripe Checkout Session integration (server-side)
+- Stripe webhook support for reliable payment confirmation
+- `stripe_checkout_session_id` field on `BaseOrder` (abstract model)
+- Centralized Stripe checkout helpers:
+  - `create_stripe_checkout_session`
+- New payment-related exceptions:
+  - `PaymentConfigurationError` (misconfiguration / missing setup)
+  - `PaymentRuntimeError` (gateway / network / Stripe API errors)
+- Stripe webhook endpoint configurable via:
+  - `DJANGO_PG_STRIPE_WEBHOOK_PATH`
+- Support for server-side payment confirmation even if:
+  - User closes browser
+  - Redirect back to frontend fails
+  - Network drops after payment
+
+### Changed
+- Payment verification architecture now supports:
+  - Redirect-based flows (Paystack, Flutterwave, Interswitch)
+  - Webhook-based confirmation (Stripe)
+- Stripe payment confirmation is now **authoritative via webhook**
+- Frontend redirect is treated as UX only, not payment truth
+
+### Fixed
+- Prevented false negatives when Stripe payments succeed but frontend redirect fails
+- Improved error handling consistency across payment gateways
+
+### Security
+- Stripe webhook signature verification using `STRIPE_WEBHOOK_SECRET`
+- Clear separation between configuration errors and runtime gateway errors
+
+### Notes
+- Developers must register the Stripe webhook endpoint in the Stripe Dashboard for production.
+- Stripe CLI can be used for local webhook testing.
+- Frontend applications are responsible for redirecting users to the Stripe Checkout URL returned by the backend.
 ---
 
 ## [0.4.1] - 2025-08-19
