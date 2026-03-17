@@ -46,76 +46,7 @@ INSTALLED_APPS = [
 ]
 ```
 
-2. **Define required settings in your settings.py**
-
-```python
-# settings.py
-
-# Models used for order
-PAYMENT_ORDER_MODEL = 'yourapp.Order'
-
-# It's recommended that you put the secret key 
-# in a .env file and load it in your settings
-
-# Paystack keys
-PAYSTACK_PUBLIC_KEY = 'your-paystack-public-key'
-PAYSTACK_SECRET_KEY = 'your-paystack-secret-key'
-
-# Flutterwave keys
-FLUTTERWAVE_PUBLIC_KEY = "your-flutterwave-public-key"
-FLUTTERWAVE_SECRET_KEY = "your-flutterwave-secret-key"
-
-# Interswitch keys
-INTERSWITCH_MERCHANT_CODE = "your-interswitch-merchant-code"
-INTERSWITCH_PAY_ITEM_ID = "your-interswitch-pay-item-id"
-
-# Stripe keys
-STRIPE_SECRET_KEY = "your_stripe_secret"
-STRIPE_WEBHOOK_SECRET = "your_webhook_secret_if_using_webhooks"
-DJANGO_PG_STRIPE_WEBHOOK_PATH = "webhooks/stripe/" #if using webhook
-```
-
-3. **Built-in Payment Verification View**
-django-pg provides a built-in payment_verification view that handles verifying transactions for all the payment gateways out of the box.
-#### 🔌 URL Configuration
-You can use the built-in view directly in your urls.py:
-```python
-from django.urls import path
-from django_pg.views import payment_verification  # Import from the package
-
-urlpatterns = [
-    path("verify/<int:order_id>/<str:payment_method>/", payment_verification, name="payment_verification"),
-]
-```
-
-#### 🌐 Redirect Behavior
-After verifying a transaction, the view will redirect the user based on settings defined in your settings.py.
-
-Option 1: Use named URL patterns
-```python
-# settings.py
-DJANGO_PG_SUCCESS_REDIRECT = 'yourapp:track_order'
-DJANGO_PG_FAILURE_REDIRECT = 'yourapp:create_order'
-```
-Option 2: Use custom Python functions (advanced)
-You can also pass a function that takes the verification result dictionary and returns a HttpResponseRedirect.
-```python
-# settings.py
-DJANGO_PG_SUCCESS_REDIRECT = 'yourapp.utils.payment_success_redirect'
-DJANGO_PG_FAILURE_REDIRECT = 'yourapp.utils.payment_failure_redirect'
-```
-
-If you go with option 2, you will need to add the functions in yourapp/utils.py:
-```python
-from django.shortcuts import redirect
-
-def payment_success_redirect(result):
-    return redirect('yourapp:track_order', order_reference=result["order_reference"])
-
-def payment_failure_redirect(result):
-    return redirect('yourapp:create_order')
-```
-4. **Extend the BaseOrder abstract model**
+2. **Configure your Order model (Extend the BaseOrder abstract model)**
 In your own app, create your order model by extending gateways.models.BaseOrder:
 ```python
 # yourapp/models.py
@@ -129,165 +60,49 @@ class Order(BaseOrder):
     # Add your fields here
 ```
 
-**Note: Users attempting to make a payment via Paystack and Flutterwave must have a valid email address. The Paystack and Flutterwave gateway requires this for transaction initiation. Make sure you enforce email submission when a user registers**
-
-### 5. Add JS to Your HTML Template
-
-If you're using multiple payment methods (e.g. Paystack, Flutterwave and Interswitch), make sure your template checks for the selected `payment_method`. If you're only using one payment method, you can pass the preferred payment method in a hidden field when the order is created.
-
-#### ✅ Paystack Integration (HTML Template)
-[Check Paystack Documentation](https://paystack.com/docs/payments/accept-payments/)
-```bash
-{% if payment_method == 'paystack' %}
-<script src="https://js.paystack.co/v2/inline.js"></script>
-<script type="text/javascript">
-    function payWithPaystack() {
-        var handler = PaystackPop.setup({
-            key: '{{ PAYSTACK_PUBLIC_KEY }}',
-            email: '{{ request.user.email }}',
-            amount: {{ order.total_price|multiply:100 }},
-            currency: "NGN",
-            ref: '' + Math.floor((Math.random() * 1000000000) + 1),
-            callback: function(response) {
-                window.location.href = "{% url 'yourapp:payment_verification' order.id payment_method %}?reference=" + response.reference;
-            },
-            onClose: function() {
-                alert('Payment was not completed.');
-            }
-        });
-        handler.openIframe();
-    }
-
-    window.onload = function() {
-        payWithPaystack();
-    };
-</script>
-{% endif %}
-```
-
-#### ✅ Flutterwave Integration (HTML Template)
-[Check Flutterwave Documentation](https://developer.flutterwave.com/docs/inline)
-```bash
-{% if payment_method == 'flutterwave' %}
-<script src="https://checkout.flutterwave.com/v3.js"></script>
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    FlutterwaveCheckout({
-      public_key: "{{ FLUTTERWAVE_PUBLIC_KEY }}",
-      tx_ref: "{{ order.order_reference }}",
-      amount: {{order.total_price}},
-      currency: "NGN",
-      payment_options: "card, ussd, banktransfer",
-      redirect_url: "{% url 'yourapp:payment_verification' order.id payment_method %}",
-      customer: {
-        email: "{{ request.user.email }}",
-        name: "{{ request.user.get_full_name|default:request.user.username }}"
-      },
-      customizations: {
-        title: "My Store",
-        description: "Payment for order {{ order.order_reference }}"
-      }
-    });
-  });
-</script>
-{% endif %}
-```
-#### ✅ Interswitch Integration (HTML Template)
-[Check Interswitch Documentation](https://docs.interswitchgroup.com/docs/web-checkout)
-```bash
-{% if payment_method == 'interswitch' %}
-<script src="https://newwebpay.qa.interswitchng.com/inline-checkout.js"></script>
-<script>
-(function() {
-    const redirectUrl = "{% url 'yourapp:payment_verification' order.id payment_method %}?reference={{ order.order_reference }}";
-    const paymentAmount = {{ order.total_price|floatformat:0 }} * 100;
-
-    function paymentCallback(response) {
-        console.log("Interswitch Payment Response:", response);
-
-        if (response?.resp === '00') {
-            // Successful payment
-            window.location.href = redirectUrl;
-        } else {
-            alert("Payment was not successful. Please try again.");
-        }
-    }
-
-    const paymentRequest = {
-        merchant_code: "{{ INTERSWITCH_MERCHANT_CODE }}",
-        pay_item_id: "{{ INTERSWITCH_PAY_ITEM_ID }}",
-        txn_ref: "{{ order.order_reference }}",
-        site_redirect_url: redirectUrl,
-        amount: paymentAmount,
-        currency: 566,
-        cust_email: "{{ request.user.email }}",
-        cust_name: "{{ request.user.get_full_name|default:request.user.username }}",
-        onComplete: paymentCallback,
-        mode: "TEST"
-    };
-
-    window.webpayCheckout(paymentRequest);
-})();
-</script>
-{% endif %}
-```
-
-## 🟦 Stripe Integration (Important)
-
-Stripe payments are **server-authoritative** and rely on **webhooks**.
-
-### How Stripe works in this package:
-1. Backend creates a Stripe Checkout Session
-2. Backend returns `stripe_checkout_url` and `stripe_session_id`
-3. Frontend redirects user to Stripe Checkout
-4. Stripe sends a webhook (`checkout.session.completed`) to the backend
-5. Backend marks the order as paid
-6. Frontend redirect is **UX only**, not payment truth
-
-⚠️ Do not rely solely on frontend redirects to confirm Stripe payments.
-⚠️ Stripe Checkout requires a webhook in production to reliably confirm payments.
-### Creating a Stripe Checkout Session (Backend)
+3. **Define the model that handles the Order in settings.py**
 
 ```python
-from django_pg.stripe.stripe_checkout import create_stripe_checkout_session
+# settings.py
 
-session = create_stripe_checkout_session(
-    order=order,
-    success_url="https://frontend.com/payment/ORDER_REF/stripe/?reference={CHECKOUT_SESSION_ID}",
-    cancel_url="https://frontend.com/payment/ORDER_REF/stripe/?cancelled=true",
-    customer_email=request.user.email,
-)
+# Models used for order
+PAYMENT_ORDER_MODEL = 'yourapp.Order'
 
-order.stripe_checkout_session_id = session.id
-order.save()
 ```
 
-#### ✅ Stripe Integration (HTML Template)
-[Check Stripe Documentation](https://docs.stripe.com/payments/quickstart-checkout-sessions)
-```bash
-{% if payment_method == 'stripe' %}
-<script src="https://js.stripe.com/v3/"></script>
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    const stripe = Stripe("{{ STRIPE_PUBLIC_KEY }}");
-    const sessionId = "{{ STRIPE_SESSION_ID|default:'' }}";
+## 🎯 Choose Your Payment Gateway
+If you're using multiple payment methods (e.g. Paystack, Flutterwave, Interswitch, and stripe), make sure your template checks for the selected `payment_method`. If you're only using one payment method, you can pass the preferred payment method in a hidden field when the order is created.
 
-    if (!sessionId) {
-        alert("Unable to start Stripe checkout (missing session id).");
-        return;
-    }
+| Gateway | Region | Best For | Setup Guide |
+|---------|--------|----------|-------------|
+| **Paystack** | Nigeria, Ghana, SA | Cards, Bank Transfer, USSD | [📘 Paystack Setup](docs/PAYSTACK_SETUP.md) |
+| **Flutterwave** | Africa | Pan-African payments | [📘 Flutterwave Setup](docs/FLUTTERWAVE_SETUP.md) |
+| **Interswitch** | Nigeria | Enterprise, WebPAY | [📘 Interswitch Setup](docs/INTERSWITCH_SETUP.md) |
+| **Stripe** | Global | International customers | [📘 Stripe Setup](docs/STRIPE_SETUP.md) |
 
-    stripe.redirectToCheckout({ sessionId: sessionId });
-});
-</script>
-{% endif %}
-```
-## Add URLs to backend if using webhook
-```bash
+Each guide covers:
+- 🔑 API key configuration
+- ⚙️ Gateway-specific settings
+- 🧪 Testing with sandbox credentials
+- 🚀 Going live checklist
+- 🔧 Troubleshooting common issues
+
+4. **Built-in Payment Verification View**
+django-pg provides a built-in payment_verification view that handles verifying transactions for all the payment gateways out of the box.
+#### 🔌 URL Configuration
+You can use the built-in view directly in your urls.py:
+```python
+from django.urls import path
+from django_pg.views import payment_verification  # Import from the package
+
 urlpatterns = [
-    path("", include("django_pg.urls")),
+    path("verify/<int:order_id>/<str:payment_method>/", payment_verification, name="payment_verification"),
 ]
 ```
+
+**Note: Users attempting to make a payment via Paystack and Flutterwave must have a valid email address. The Paystack and Flutterwave gateway requires this for transaction initiation. Make sure you enforce email submission when a user registers**
+
+
 ## 🔁 Signals (Auto Order Reference)
 
 You don’t need to register anything. The gateways app automatically registers a pre_save signal that generates a unique order_reference.
