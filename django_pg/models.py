@@ -5,6 +5,7 @@ PAYMENT_METHOD_CHOICES = [
         ('flutterwave', 'Flutterwave'),
         ('interswitch', 'Interswitch'),
         ('stripe', 'Stripe'),
+        ('paypal', 'PayPal'),
     ]
 
 ORDER_STATUS = [
@@ -28,6 +29,10 @@ class BaseOrder(models.Model):
         null=True,
         help_text="The payment gateway used for this order.")
     stripe_checkout_session_id = models.CharField(max_length=120, blank=True, null=True)
+    paypal_order_id = models.CharField(max_length=120, blank=True, null=True, 
+                                        help_text="The PayPal order ID for this transaction")
+    paypal_capture_id = models.CharField(max_length=120, blank=True, null=True,
+                                          help_text="The PayPal capture ID after payment completion")
     payment_date = models.DateTimeField(null=True, blank=True)
 
     class Meta:

@@ -75,10 +75,10 @@ If you're using multiple payment methods (e.g. Paystack, Flutterwave, Interswitc
 
 | Gateway | Region | Best For | Setup Guide |
 |---------|--------|----------|-------------|
-| **Paystack** | Nigeria, Ghana, SA | Cards, Bank Transfer, USSD | [📘 Paystack Setup](docs/PAYSTACK_SETUP.md) |
-| **Flutterwave** | Africa | Pan-African payments | [📘 Flutterwave Setup](docs/FLUTTERWAVE_SETUP.md) |
-| **Interswitch** | Nigeria | Enterprise, WebPAY | [📘 Interswitch Setup](docs/INTERSWITCH_SETUP.md) |
-| **Stripe** | Global | International customers | [📘 Stripe Setup](docs/STRIPE_SETUP.md) |
+| **Paystack** | Nigeria, Ghana, SA | Cards, Bank Transfer, USSD | [📘 Paystack Setup](https://github.com/niyimarc/payment_gateway/blob/master/docs/PAYSTACK_SETUP.md) |
+| **Flutterwave** | Africa | Pan-African payments | [📘 Flutterwave Setup](https://github.com/niyimarc/payment_gateway/blob/master/docs/FLUTTERWAVE_SETUP.md) |
+| **Interswitch** | Nigeria | Enterprise, WebPAY | [📘 Interswitch Setup](https://github.com/niyimarc/payment_gateway/blob/master/docs/INTERSWITCH_SETUP.md) |
+| **Stripe** | Global | International customers | [📘 Stripe Setup](https://github.com/niyimarc/payment_gateway/blob/master/docs/STRIPE_SETUP.md) |
 
 Each guide covers:
 - 🔑 API key configuration
