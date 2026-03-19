@@ -33,6 +33,8 @@ class BaseOrder(models.Model):
                                         help_text="The PayPal order ID for this transaction")
     paypal_capture_id = models.CharField(max_length=120, blank=True, null=True,
                                           help_text="The PayPal capture ID after payment completion")
+    paypal_approve_url = models.URLField(max_length=500, blank=True, null=True,
+                                          help_text="The PayPal approval URL to redirect the user to")
     payment_date = models.DateTimeField(null=True, blank=True)
 
     class Meta:
