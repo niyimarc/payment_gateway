@@ -10,7 +10,7 @@ extensible architecture for adding more gateways.
 ## ✨ Features
 
 - 🔌 Plug-and-play integration
-- 🔐 Paystack, Flutterwave, Interswitch, and Stripe support
+- 🔐 Paystack, Flutterwave, Interswitch, Stripe, PayPal support
 - 📦 Dispatcher pattern for gateway switching
 - 🧱 Abstract `BaseOrder` model for customization
 - ✅ Built-in Payment Verification View (redirect-based gateways)
@@ -79,6 +79,7 @@ If you're using multiple payment methods (e.g. Paystack, Flutterwave, Interswitc
 | **Flutterwave** | Africa | Pan-African payments | [📘 Flutterwave Setup](https://github.com/niyimarc/payment_gateway/blob/master/docs/FLUTTERWAVE_SETUP.md) |
 | **Interswitch** | Nigeria | Enterprise, WebPAY | [📘 Interswitch Setup](https://github.com/niyimarc/payment_gateway/blob/master/docs/INTERSWITCH_SETUP.md) |
 | **Stripe** | Global | International customers | [📘 Stripe Setup](https://github.com/niyimarc/payment_gateway/blob/master/docs/STRIPE_SETUP.md) |
+| **PayPal** | Global | International customers | [📘 PayPal Setup](https://github.com/niyimarc/payment_gateway/blob/master/docs/PAYPAL_SETUP.md) |
 
 Each guide covers:
 - 🔑 API key configuration
